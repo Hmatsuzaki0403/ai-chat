@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
     const langName = LANGUAGE_NAMES[language] ?? language;
 
     const model = genAI.getGenerativeModel({
-      model: "gemini-2.0-flash",
+      model: "gemini-1.5-flash",
       systemInstruction: `あなたは多言語対応の窓口AIアシスタントです。
 ユーザーのメッセージには必ず ${langName} で返答してください。
 他の言語は使わないでください。
