@@ -13,40 +13,58 @@ const LANGUAGE_NAMES: Record<string, string> = {
   th: "ภาษาไทย",
 };
 
+const CATEGORIES = ["問い合わせ", "チケット希望", "告知反応", "その他"] as const;
+type Category = typeof CATEGORIES[number];
+
+async function gemini(systemPrompt: string, userMessage: string): Promise<string> {
+  const apiKey = process.env.GEMINI_API_KEY;
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        system_instruction: { parts: [{ text: systemPrompt }] },
+        contents: [{ role: "user", parts: [{ text: userMessage }] }],
+      }),
+    }
+  );
+  const data = await res.json();
+  if (!res.ok) throw new Error(JSON.stringify(data));
+  return data.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { message, language } = await req.json();
-
     if (!message || !language) {
       return NextResponse.json({ error: "Missing message or language" }, { status: 400 });
     }
 
     const langName = LANGUAGE_NAMES[language] ?? language;
-    const apiKey = process.env.GEMINI_API_KEY;
 
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          system_instruction: {
-            parts: [{ text: `あなたは多言語対応の窓口AIアシスタントです。ユーザーのメッセージには必ず${langName}で返答してください。他の言語は使わないでください。丁寧で親切に答えてください。` }],
-          },
-          contents: [{ role: "user", parts: [{ text: message }] }],
-        }),
-      }
-    );
+    // 返答と分類を並行して実行
+    const [reply, categoryRaw] = await Promise.all([
+      gemini(
+        `あなたは多言語対応の窓口AIアシスタントです。ユーザーのメッセージには必ず${langName}で返答してください。他の言語は使わないでください。丁寧で親切に答えてください。`,
+        message
+      ),
+      gemini(
+        `あなたはメッセージ分類AIです。ユーザーのメッセージを以下の4カテゴリのいずれか1つに分類してください。カテゴリ名だけを返してください。他の文字は一切不要です。
+カテゴリ：問い合わせ／チケット希望／告知反応／その他
+・問い合わせ：質問・相談・情報を求めている
+・チケット希望：チケット購入・予約・申込みに関する内容
+・告知反応：お知らせ・イベント・発表への反応やコメント
+・その他：上記に当てはまらない場合`,
+        message
+      ),
+    ]);
 
-    const data = await res.json();
+    const category: Category = CATEGORIES.includes(categoryRaw.trim() as Category)
+      ? (categoryRaw.trim() as Category)
+      : "その他";
 
-    if (!res.ok) {
-      console.error("Gemini API error:", JSON.stringify(data));
-      return NextResponse.json({ error: "API error", detail: data }, { status: 500 });
-    }
-
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? "エラーが発生しました";
-    return NextResponse.json({ reply: text });
+    return NextResponse.json({ reply, category });
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: "API error" }, { status: 500 });

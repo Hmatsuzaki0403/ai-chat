@@ -13,9 +13,17 @@ const LANGUAGES = [
   { code: "th", label: "ไทย" },
 ];
 
+const CATEGORY_STYLES: Record<string, string> = {
+  "問い合わせ":  "bg-blue-100 text-blue-700",
+  "チケット希望": "bg-green-100 text-green-700",
+  "告知反応":   "bg-yellow-100 text-yellow-700",
+  "その他":     "bg-gray-100 text-gray-500",
+};
+
 type Message = {
   role: "user" | "ai";
   text: string;
+  category?: string;
 };
 
 export default function Home() {
@@ -44,7 +52,10 @@ export default function Home() {
         body: JSON.stringify({ message: text, language: selectedLang }),
       });
       const data = await res.json();
-      setMessages((prev) => [...prev, { role: "ai", text: data.reply ?? "エラーが発生しました" }]);
+      setMessages((prev) => [
+        ...prev,
+        { role: "ai", text: data.reply ?? "エラーが発生しました", category: data.category },
+      ]);
     } catch {
       setMessages((prev) => [...prev, { role: "ai", text: "エラーが発生しました" }]);
     } finally {
@@ -54,7 +65,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex flex-col">
-      {/* ヘッダー */}
       <header className="bg-white dark:bg-gray-900 shadow-sm px-4 py-3 flex items-center gap-2">
         <span className="text-2xl">🌐</span>
         <h1 className="text-lg font-bold text-gray-900 dark:text-white">AI多言語チャットボット</h1>
@@ -87,7 +97,12 @@ export default function Home() {
             <p className="text-gray-400 dark:text-gray-500 text-sm m-auto">メッセージを送ってください</p>
           )}
           {messages.map((msg, i) => (
-            <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+            <div key={i} className={`flex flex-col ${msg.role === "user" ? "items-end" : "items-start"}`}>
+              {msg.category && (
+                <span className={`text-xs font-medium px-2 py-0.5 rounded-full mb-1 ${CATEGORY_STYLES[msg.category] ?? CATEGORY_STYLES["その他"]}`}>
+                  {msg.category}
+                </span>
+              )}
               <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl text-sm whitespace-pre-wrap ${
                 msg.role === "user"
                   ? "bg-indigo-600 text-white rounded-br-sm"
