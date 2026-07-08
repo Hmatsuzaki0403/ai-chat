@@ -1,7 +1,6 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextRequest, NextResponse } from "next/server";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+export const runtime = "nodejs";
 
 const LANGUAGE_NAMES: Record<string, string> = {
   ja: "日本語",
@@ -23,18 +22,30 @@ export async function POST(req: NextRequest) {
     }
 
     const langName = LANGUAGE_NAMES[language] ?? language;
+    const apiKey = process.env.GEMINI_API_KEY;
 
-    const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
-      systemInstruction: `あなたは多言語対応の窓口AIアシスタントです。
-ユーザーのメッセージには必ず ${langName} で返答してください。
-他の言語は使わないでください。
-丁寧で親切に答えてください。`,
-    });
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          system_instruction: {
+            parts: [{ text: `あなたは多言語対応の窓口AIアシスタントです。ユーザーのメッセージには必ず${langName}で返答してください。他の言語は使わないでください。丁寧で親切に答えてください。` }],
+          },
+          contents: [{ role: "user", parts: [{ text: message }] }],
+        }),
+      }
+    );
 
-    const result = await model.generateContent(message);
-    const text = result.response.text();
+    const data = await res.json();
 
+    if (!res.ok) {
+      console.error("Gemini API error:", JSON.stringify(data));
+      return NextResponse.json({ error: "API error", detail: data }, { status: 500 });
+    }
+
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? "エラーが発生しました";
     return NextResponse.json({ reply: text });
   } catch (error) {
     console.error(error);
