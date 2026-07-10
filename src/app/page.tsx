@@ -91,8 +91,7 @@ export default function Home() {
   const activeLangs = LANGUAGES.filter(({ code }) => (stats.byLang[code] ?? 0) > 0);
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white flex flex-col" style={{ backgroundImage: "url('/gackt.jpg')", backgroundSize: "cover", backgroundPosition: "center top", backgroundAttachment: "fixed" }}>
-      <div className="fixed inset-0 bg-slate-900/80 pointer-events-none" />
+    <div className="min-h-screen bg-slate-900 text-white flex flex-col">
 
       {/* ヘッダー */}
       <header className="border-b border-white/10 px-6 py-4 bg-slate-900/90">
