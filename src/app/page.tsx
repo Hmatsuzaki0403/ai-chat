@@ -3,23 +3,30 @@
 import { useState, useRef, useEffect } from "react";
 
 const LANGUAGES = [
-  { code: "ja", label: "日本語" },
-  { code: "en", label: "English" },
-  { code: "zh-TW", label: "繁體中文" },
-  { code: "yue", label: "廣東話" },
-  { code: "es", label: "Español" },
-  { code: "ko", label: "한국어" },
-  { code: "fr", label: "Français" },
-  { code: "th", label: "ไทย" },
+  { code: "ja",    label: "日本語",         flag: "🇯🇵" },
+  { code: "en",    label: "English",        flag: "🇬🇧" },
+  { code: "zh-TW", label: "繁體中文(香港)", flag: "🇭🇰" },
+  { code: "yue",   label: "廣東話",         flag: "🇭🇰" },
+  { code: "es",    label: "Español",        flag: "🇪🇸" },
+  { code: "ko",    label: "한국어",          flag: "🇰🇷" },
+  { code: "fr",    label: "Français",       flag: "🇫🇷" },
+  { code: "th",    label: "ไทย",            flag: "🇹🇭" },
 ];
 
 const CATEGORIES = ["問い合わせ", "チケット希望", "告知反応", "その他"] as const;
 
+const CATEGORY_LABEL: Record<string, string> = {
+  "問い合わせ":  "問い合わせ",
+  "チケット希望": "チケット希望 ★",
+  "告知反応":   "告知反応",
+  "その他":     "その他",
+};
+
 const CATEGORY_STYLES: Record<string, { badge: string; bar: string }> = {
-  "問い合わせ":  { badge: "bg-blue-100 text-blue-700",   bar: "bg-blue-500" },
-  "チケット希望": { badge: "bg-green-100 text-green-700", bar: "bg-green-500" },
+  "問い合わせ":  { badge: "bg-blue-100 text-blue-700",    bar: "bg-blue-500" },
+  "チケット希望": { badge: "bg-green-100 text-green-700",  bar: "bg-green-500" },
   "告知反応":   { badge: "bg-yellow-100 text-yellow-700", bar: "bg-yellow-400" },
-  "その他":     { badge: "bg-gray-100 text-gray-500",    bar: "bg-gray-400" },
+  "その他":     { badge: "bg-gray-100 text-gray-500",     bar: "bg-gray-400" },
 };
 
 type Message = {
@@ -47,7 +54,6 @@ export default function Home() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState<Stats>(initStats());
-  const [showDash, setShowDash] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -89,147 +95,156 @@ export default function Home() {
     }
   };
 
-  const langLabel = (code: string) => LANGUAGES.find((l) => l.code === code)?.label ?? code;
+  const activeLangs = LANGUAGES.filter(({ code }) => (stats.byLang[code] ?? 0) > 0);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex flex-col">
-      <header className="bg-white dark:bg-gray-900 shadow-sm px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-2xl">🌐</span>
-          <h1 className="text-lg font-bold text-gray-900 dark:text-white">AI多言語チャットボット</h1>
+    <div className="min-h-screen bg-black text-white flex flex-col">
+      {/* ヘッダー */}
+      <header className="border-b border-white/10 px-6 py-4 flex items-center justify-between">
+        <div>
+          <p className="text-xs tracking-[0.3em] text-white/40 uppercase mb-0.5">No language barriers</p>
+          <h1 className="text-xl font-bold tracking-widest uppercase">GACKT CONCIERGE</h1>
         </div>
-        <button
-          onClick={() => setShowDash((v) => !v)}
-          className="text-xs px-3 py-1.5 rounded-lg bg-indigo-50 dark:bg-gray-800 text-indigo-600 dark:text-indigo-400 font-medium border border-indigo-200 dark:border-gray-700 hover:bg-indigo-100 transition-colors"
-        >
-          📊 {showDash ? "チャットに戻る" : `ダッシュボード (${stats.total}件)`}
-        </button>
       </header>
 
-      <main className="flex-1 flex flex-col max-w-2xl w-full mx-auto p-4 gap-4">
-        {showDash ? (
-          /* ── ダッシュボード ── */
-          <div className="flex flex-col gap-4">
+      <main className="flex-1 flex flex-col max-w-2xl w-full mx-auto px-4 py-6 gap-6">
+
+        {/* ヒーロー */}
+        <div className="text-center py-4">
+          <h2 className="text-2xl font-bold mb-2">世界は、ひとつ。言葉は、すべて。</h2>
+          <p className="text-sm text-white/50 leading-relaxed">
+            世界中のファンに、その言語のまま即対応するGACKT専属スタッフAI
+          </p>
+          <p className="text-xs text-white/30 mt-2">
+            下の言語ボタンを押すか、自由に入力して送信してください。<br />
+            どの言語で送っても、AIが同じ言語で返します。
+          </p>
+        </div>
+
+        {/* 言語ボタン */}
+        <div className="grid grid-cols-4 gap-2">
+          {LANGUAGES.map((lang) => (
+            <button
+              key={lang.code}
+              onClick={() => setSelectedLang(lang.code)}
+              className={`py-2 px-1 rounded-xl text-sm font-medium transition-all border ${
+                selectedLang === lang.code
+                  ? "bg-white text-black border-white shadow-md"
+                  : "bg-white/5 text-white/70 border-white/10 hover:border-white/30 hover:bg-white/10"
+              }`}
+            >
+              <span className="mr-1">{lang.flag}</span>{lang.label}
+            </button>
+          ))}
+        </div>
+
+        {/* チャットエリア */}
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-4 min-h-64 flex flex-col gap-3 overflow-y-auto">
+          {messages.length === 0 && (
+            <p className="text-white/30 text-sm m-auto">GACKTについて何でも聞いてください</p>
+          )}
+          {messages.map((msg, i) => (
+            <div key={i} className={`flex flex-col ${msg.role === "user" ? "items-end" : "items-start"}`}>
+              {msg.category && (
+                <span className={`text-xs font-medium px-2 py-0.5 rounded-full mb-1 ${CATEGORY_STYLES[msg.category]?.badge ?? "bg-gray-100 text-gray-500"}`}>
+                  {CATEGORY_LABEL[msg.category] ?? msg.category}
+                </span>
+              )}
+              <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl text-sm whitespace-pre-wrap ${
+                msg.role === "user"
+                  ? "bg-white text-black rounded-br-sm"
+                  : "bg-white/10 text-white rounded-bl-sm"
+              }`}>
+                {msg.text}
+              </div>
+            </div>
+          ))}
+          {loading && (
+            <div className="flex justify-start">
+              <div className="bg-white/10 px-4 py-2 rounded-2xl rounded-bl-sm text-sm text-white/40">
+                考え中...
+              </div>
+            </div>
+          )}
+          <div ref={bottomRef} />
+        </div>
+
+        {/* 入力欄 */}
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+            placeholder="メッセージを入力..."
+            className="flex-1 rounded-xl border border-white/20 bg-white/5 px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-white/30"
+          />
+          <button
+            onClick={sendMessage}
+            disabled={loading || !input.trim()}
+            className="bg-white hover:bg-white/90 disabled:opacity-30 text-black px-6 py-3 rounded-xl font-bold transition-colors"
+          >
+            送信
+          </button>
+        </div>
+
+        {/* ダッシュボード */}
+        <div className="border-t border-white/10 pt-6">
+          <h3 className="text-sm font-bold tracking-widest uppercase text-white/40 mb-4">ダッシュボード</h3>
+
+          <div className="grid grid-cols-3 gap-4">
             {/* 合計 */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 text-center">
-              <p className="text-xs text-gray-400 mb-1">合計件数</p>
-              <p className="text-5xl font-bold text-indigo-600">{stats.total}</p>
-              <p className="text-xs text-gray-400 mt-1">件</p>
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-4 text-center">
+              <p className="text-xs text-white/30 mb-1">合計</p>
+              <p className="text-4xl font-bold">{stats.total}</p>
             </div>
 
             {/* 分類別 */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-5">
-              <p className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3">分類別</p>
-              <div className="flex flex-col gap-3">
+            <div className="col-span-2 bg-white/5 border border-white/10 rounded-2xl p-4">
+              <p className="text-xs text-white/30 mb-3">分類別</p>
+              <div className="flex flex-col gap-2">
                 {CATEGORIES.map((cat) => {
                   const count = stats.byCategory[cat] ?? 0;
                   const pct = stats.total > 0 ? Math.round((count / stats.total) * 100) : 0;
                   const style = CATEGORY_STYLES[cat];
                   return (
-                    <div key={cat}>
-                      <div className="flex justify-between text-xs mb-1">
-                        <span className={`px-2 py-0.5 rounded-full font-medium ${style.badge}`}>{cat}</span>
-                        <span className="text-gray-500 dark:text-gray-400">{count}件 ({pct}%)</span>
-                      </div>
-                      <div className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                    <div key={cat} className="flex items-center gap-2 text-xs">
+                      <span className={`px-2 py-0.5 rounded-full font-medium whitespace-nowrap ${style.badge}`}>
+                        {CATEGORY_LABEL[cat]}
+                      </span>
+                      <div className="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
                         <div className={`h-full rounded-full transition-all ${style.bar}`} style={{ width: `${pct}%` }} />
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* 言語別 */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-5">
-              <p className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3">言語別</p>
-              <div className="grid grid-cols-2 gap-2">
-                {LANGUAGES.map(({ code, label }) => {
-                  const count = stats.byLang[code] ?? 0;
-                  return (
-                    <div key={code} className="flex justify-between items-center px-3 py-2 bg-gray-50 dark:bg-gray-700 rounded-xl text-sm">
-                      <span className="text-gray-700 dark:text-gray-200">{label}</span>
-                      <span className="font-bold text-indigo-600 dark:text-indigo-400">{count}</span>
+                      <span className="text-white/40 w-4 text-right">{count}</span>
                     </div>
                   );
                 })}
               </div>
             </div>
           </div>
-        ) : (
-          /* ── チャット ── */
-          <>
-            <div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 font-medium">言語を選んでください / Select Language</p>
+
+          {/* 言語別 */}
+          <div className="mt-4 bg-white/5 border border-white/10 rounded-2xl p-4">
+            <p className="text-xs text-white/30 mb-3">言語別</p>
+            {activeLangs.length === 0 ? (
+              <p className="text-xs text-white/20">まだありません</p>
+            ) : (
               <div className="grid grid-cols-4 gap-2">
-                {LANGUAGES.map((lang) => (
-                  <button
-                    key={lang.code}
-                    onClick={() => setSelectedLang(lang.code)}
-                    className={`py-2 px-1 rounded-xl text-sm font-medium transition-all border ${
-                      selectedLang === lang.code
-                        ? "bg-indigo-600 text-white border-indigo-600 shadow-md"
-                        : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-700 hover:border-indigo-400"
-                    }`}
-                  >
-                    {lang.label}
-                  </button>
+                {activeLangs.map(({ code, flag, label }) => (
+                  <div key={code} className="flex flex-col items-center bg-white/5 rounded-xl py-2 px-1 text-center">
+                    <span className="text-lg">{flag}</span>
+                    <span className="text-xs text-white/50 mt-0.5 truncate w-full text-center">{label}</span>
+                    <span className="text-sm font-bold mt-0.5">{stats.byLang[code]}</span>
+                  </div>
                 ))}
               </div>
-            </div>
+            )}
+            <p className="text-xs text-white/20 mt-3">
+              送信のたびに件数がリアルタイムで増えます。チケット希望（★）は売れ方分析の土台です。
+            </p>
+          </div>
+        </div>
 
-            <div className="flex-1 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 min-h-64 flex flex-col gap-3 overflow-y-auto">
-              {messages.length === 0 && (
-                <p className="text-gray-400 dark:text-gray-500 text-sm m-auto">メッセージを送ってください</p>
-              )}
-              {messages.map((msg, i) => (
-                <div key={i} className={`flex flex-col ${msg.role === "user" ? "items-end" : "items-start"}`}>
-                  {msg.category && (
-                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full mb-1 ${CATEGORY_STYLES[msg.category]?.badge ?? "bg-gray-100 text-gray-500"}`}>
-                      {msg.category}
-                    </span>
-                  )}
-                  <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl text-sm whitespace-pre-wrap ${
-                    msg.role === "user"
-                      ? "bg-indigo-600 text-white rounded-br-sm"
-                      : "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-bl-sm"
-                  }`}>
-                    {msg.text}
-                  </div>
-                  {msg.role === "user" && msg.lang && (
-                    <span className="text-xs text-gray-400 mt-0.5">{langLabel(msg.lang)}</span>
-                  )}
-                </div>
-              ))}
-              {loading && (
-                <div className="flex justify-start">
-                  <div className="bg-gray-100 dark:bg-gray-700 px-4 py-2 rounded-2xl rounded-bl-sm text-sm text-gray-500 dark:text-gray-400">
-                    考え中...
-                  </div>
-                </div>
-              )}
-              <div ref={bottomRef} />
-            </div>
-
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-                placeholder="メッセージを入力..."
-                className="flex-1 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-              <button
-                onClick={sendMessage}
-                disabled={loading || !input.trim()}
-                className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white px-5 py-3 rounded-xl font-medium transition-colors"
-              >
-                送信
-              </button>
-            </div>
-          </>
-        )}
       </main>
     </div>
   );

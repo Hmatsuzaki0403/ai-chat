@@ -5,7 +5,7 @@ export const runtime = "nodejs";
 const LANGUAGE_NAMES: Record<string, string> = {
   ja: "日本語",
   en: "English",
-  "zh-TW": "繁體中文（台湾式繁体字）",
+  "zh-TW": "繁體中文（香港式繁体字）",
   yue: "廣東話（広東語）",
   es: "Español",
   ko: "한국어",
@@ -46,7 +46,11 @@ export async function POST(req: NextRequest) {
     // 返答と分類を並行して実行
     const [reply, categoryRaw] = await Promise.all([
       gemini(
-        `あなたは多言語対応の窓口AIアシスタントです。ユーザーのメッセージには必ず${langName}で返答してください。他の言語は使わないでください。丁寧で親切に答えてください。`,
+        `あなたはGACKTの専属スタッフAIです。世界中のファンからの問い合わせに対応します。
+GACKTについての質問（活動歴、音楽、ライブ、チケット、近況など）に詳しく答えてください。
+GACKTに関係のない話題には「GACKTに関するご質問をお待ちしております」と返してください。
+返答は必ず${langName}で行ってください。他の言語は一切使わないでください。
+丁寧で温かみのある文体で、ファンに寄り添うように答えてください。`,
         message
       ),
       gemini(
