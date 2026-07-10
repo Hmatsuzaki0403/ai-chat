@@ -91,7 +91,8 @@ export default function Home() {
   const activeLangs = LANGUAGES.filter(({ code }) => (stats.byLang[code] ?? 0) > 0);
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white flex flex-col">
+    <div className="min-h-screen bg-slate-900 text-white flex flex-col" style={{ backgroundImage: "url('/gackt.jpg')", backgroundSize: "cover", backgroundPosition: "center top", backgroundAttachment: "fixed" }}>
+      <div className="fixed inset-0 bg-slate-900/80 pointer-events-none" />
 
       {/* ヘッダー */}
       <header className="border-b border-white/10 px-6 py-4 bg-slate-900/90">
@@ -103,12 +104,9 @@ export default function Home() {
 
         {/* ヒーロー */}
         <div className="rounded-2xl border border-white/10 bg-slate-800/50 p-5 text-center">
-          <h2 className="text-lg font-bold text-white mb-1">世界は、ひとつ。言葉は、すべて。</h2>
-          <p className="text-sm text-slate-400">
-            世界中のファンに、その言語のまま即対応するGACKT専属スタッフAI
-          </p>
+          <h2 className="text-lg font-bold text-white mb-1">GACKTについて何でも聞いてね</h2>
           <p className="text-xs text-slate-500 mt-1">
-            下の言語ボタンを押すか、自由に入力して送信してください。どの言語で送っても、AIが同じ言語で返します。
+            言語を選んで送信してください。AIが同じ言語で返します。
           </p>
         </div>
 
