@@ -300,3 +300,40 @@ header.site h1 {
   background: var(--green);
 }
 .health .dot.down { background: var(--red); }
+
+/* ---- LESSON 2-2: 入口ページ ---- */
+.entry-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin: 8px 0 20px;
+}
+.entry-btn {
+  display: block;
+  text-align: center;
+  padding: 18px;
+  border-radius: 14px;
+  font-size: 17px;
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--text);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  transition: all 0.15s;
+}
+.entry-btn:hover { border-color: var(--muted); }
+.entry-btn.primary {
+  background: var(--accent);
+  color: #0d1220;
+}
+.guest-link {
+  text-align: center;
+  margin-top: 8px;
+}
+.guest-link a {
+  color: var(--muted);
+  font-size: 14px;
+  text-decoration: none;
+  border-bottom: 1px dotted var(--muted);
+}
+.guest-link a:hover { color: var(--text); }
