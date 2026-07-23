@@ -337,3 +337,68 @@ header.site h1 {
   border-bottom: 1px dotted var(--muted);
 }
 .guest-link a:hover { color: var(--text); }
+
+/* ---- LESSON 2-3: 認証フォーム ---- */
+.auth-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px;
+  max-width: 440px;
+  margin: 0 auto 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.auth-input {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--text);
+  padding: 16px 18px;
+  font-size: 15px;
+}
+.auth-input:focus { outline: none; border-color: var(--muted); }
+.auth-input.code {
+  text-align: center;
+  font-size: 24px;
+  letter-spacing: 0.4em;
+}
+.auth-btn {
+  background: var(--accent);
+  color: #0d1220;
+  border: none;
+  border-radius: 12px;
+  padding: 16px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+}
+.auth-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.auth-btn.center { text-align: center; display: block; }
+.auth-link {
+  background: none;
+  border: none;
+  color: var(--blue);
+  cursor: pointer;
+  font-size: 14px;
+  text-decoration: underline;
+}
+.auth-sub { color: var(--muted); font-size: 14px; text-align: center; }
+.auth-error {
+  color: var(--red);
+  font-size: 14px;
+  border: 1px solid var(--red);
+  border-radius: 10px;
+  padding: 10px 14px;
+}
+.auth-success { font-size: 18px; text-align: center; }
+.dev-note {
+  color: var(--orange);
+  font-size: 13px;
+  border: 1px dashed var(--orange);
+  border-radius: 10px;
+  padding: 10px 14px;
+}
+.dev-note strong { font-size: 18px; letter-spacing: 0.2em; }
