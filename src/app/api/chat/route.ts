@@ -1,110 +1,70 @@
 import { NextRequest, NextResponse } from "next/server";
+import { classify } from "@/lib/classify";
+import { checkRateLimit, serialize, validateMessage } from "@/lib/guard";
+import { UI, type Lang } from "@/lib/i18n";
+import { generateAnswer } from "@/lib/llm";
+import { getStore } from "@/lib/store";
 
 export const runtime = "nodejs";
+export const maxDuration = 60;
 
-const LANGUAGE_NAMES: Record<string, string> = {
-  ja: "日本語",
-  en: "English",
-  "zh-TW": "繁體中文（香港式繁体字）",
-  yue: "廣東話（広東語）",
-  es: "Español",
-  ko: "한국어",
-  fr: "Français",
-  th: "ภาษาไทย",
-};
-
-const CATEGORIES = ["問い合わせ", "チケット希望", "告知反応", "その他"] as const;
-type Category = typeof CATEGORIES[number];
-
-// gackt.com からテキスト情報を取得
-async function fetchGacktInfo(): Promise<string> {
-  try {
-    const res = await fetch("https://gackt.com", {
-      headers: { "User-Agent": "Mozilla/5.0" },
-      next: { revalidate: 3600 }, // 1時間キャッシュ
-    });
-    const html = await res.text();
-
-    // HTMLタグを除去してテキストだけ残す
-    const text = html
-      .replace(/<script[\s\S]*?<\/script>/gi, "")
-      .replace(/<style[\s\S]*?<\/style>/gi, "")
-      .replace(/<[^>]+>/g, " ")
-      .replace(/\s+/g, " ")
-      .trim();
-
-    // 先頭5000文字に絞る（トークン節約）
-    return text.slice(0, 5000);
-  } catch {
-    return "";
-  }
-}
-
-async function gemini(systemPrompt: string, userMessage: string): Promise<string> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        system_instruction: { parts: [{ text: systemPrompt }] },
-        contents: [{ role: "user", parts: [{ text: userMessage }] }],
-      }),
-    }
-  );
-  const data = await res.json();
-  if (!res.ok) throw new Error(JSON.stringify(data));
-  return data.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
-}
+const VALID_LANGS = new Set<Lang>([
+  "ja", "en", "zh-hk", "yue", "es", "ko", "fr", "th",
+]);
 
 export async function POST(req: NextRequest) {
+  let lang: Lang = "ja";
+  const store = getStore();
   try {
-    const { message, language } = await req.json();
-    if (!message || !language) {
-      return NextResponse.json({ error: "Missing message or language" }, { status: 400 });
+    const body = await req.json().catch(() => ({}));
+    if (VALID_LANGS.has(body?.lang)) lang = body.lang as Lang;
+    const ui = UI[lang];
+
+    // 1) 入力バリデーション（400系はユーザー起因。統計にもエラーにも数えない）
+    const v = validateMessage(body?.message);
+    if (!v.ok) {
+      return NextResponse.json(
+        {
+          ok: false,
+          userError: true,
+          error: v.reason === "too_long" ? ui.errTooLong : ui.errBusy,
+        },
+        { status: 400 }
+      );
     }
 
-    const langName = LANGUAGE_NAMES[language] ?? language;
+    // 2) レートリミット
+    const ip =
+      req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+    if (!checkRateLimit(ip)) {
+      return NextResponse.json(
+        { ok: false, userError: true, error: ui.errRateLimit },
+        { status: 429 }
+      );
+    }
 
-    // 公式サイトの情報取得と返答・分類を並行実行
-    const [siteInfo, categoryRaw] = await Promise.all([
-      fetchGacktInfo(),
-      gemini(
-        `あなたはメッセージ分類AIです。ユーザーのメッセージを以下の4カテゴリのいずれか1つに分類してください。カテゴリ名だけを返してください。他の文字は一切不要です。
-カテゴリ：問い合わせ／チケット希望／告知反応／その他
-・問い合わせ：質問・相談・情報を求めている
-・チケット希望：チケット購入・予約・申込みに関する内容
-・告知反応：お知らせ・イベント・発表への反応やコメント
-・その他：上記に当てはまらない場合`,
-        message
-      ),
-    ]);
+    // 3) 分類（応答生成から独立。絶対に失敗しない）
+    const category = classify(v.message);
 
-    const systemPrompt = `あなたはGACKTの専属スタッフAIです。世界中のファンからの問い合わせに対応します。
+    // 4) 応答生成（同一IPは直列化。リトライ→フォールバックで必ず返る）
+    const result = await serialize(ip, () => generateAnswer(v.message, lang));
 
-以下はGACKT公式サイト（gackt.com）から取得した最新情報です。この情報を優先的に参照して回答してください：
+    // 5) 統計: 成功応答のみ集計（フォールバック応答も「返せた」ので集計する）
+    await store.recordOk(category, lang);
 
----
-${siteInfo}
----
-
-回答ルール：
-- 回答は3文以内で簡潔にまとめてください。余計な前置きや説明は不要です。
-- GACKTに関する質問には、上記の公式情報をもとに答えてください。
-- 公式サイトに情報がない場合は、一般的なGACKT知識で補完してください。
-- GACKTと無関係な話題には一言「GACKTに関するご質問をどうぞ」と返してください。
-- 返答は必ず${langName}で行ってください。他の言語は一切使わないでください。`;
-
-    const reply = await gemini(systemPrompt, message);
-
-    const category: Category = CATEGORIES.includes(categoryRaw.trim() as Category)
-      ? (categoryRaw.trim() as Category)
-      : "その他";
-
-    return NextResponse.json({ reply, category });
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: "API error" }, { status: 500 });
+    return NextResponse.json({
+      ok: true,
+      reply: result.text,
+      category,
+      degraded: result.degraded,
+    });
+  } catch (err) {
+    // ここに来るのは想定外の障害のみ。エラーは別カウンタへ（ファン向け統計を汚さない）
+    await store.recordError();
+    console.error("[chat] unexpected error:", err);
+    return NextResponse.json(
+      { ok: false, userError: false, error: UI[lang].errBusy },
+      { status: 200 } // クライアントには構造化エラーとして返し、5xxは見せない
+    );
   }
 }
