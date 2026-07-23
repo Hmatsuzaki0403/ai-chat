@@ -432,3 +432,42 @@ header.site h1 {
 }
 .inq-ok { color: var(--muted); font-size: 13px; }
 .inq-date { color: var(--muted); font-size: 12px; }
+
+/* ---- LESSON 2-6: 管理画面 ---- */
+.container.wide { max-width: 1100px; }
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+.filters select, .filters input {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  padding: 10px 14px;
+  font-size: 14px;
+}
+.filters input[type="date"] { color-scheme: dark; }
+.auth-btn.slim { padding: 10px 22px; font-size: 14px; }
+.region-tag { min-width: 140px; }
+.tablewrap { overflow-x: auto; }
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.admin-table th, .admin-table td {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+  white-space: nowrap;
+}
+.admin-table td.msgcell {
+  white-space: normal;
+  min-width: 240px;
+  max-width: 420px;
+}
+.admin-table th { color: var(--muted); font-weight: 500; }
