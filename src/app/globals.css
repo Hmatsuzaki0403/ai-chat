@@ -421,3 +421,14 @@ header.site h1 {
 .chip:hover { border-color: var(--muted); }
 .chip:disabled { opacity: 0.4; cursor: not-allowed; }
 .inputrow.ob { margin-bottom: 0; }
+
+/* ---- LESSON 2-5: 質問・クレーム受付 ---- */
+.tag.complaint { color: var(--red); border-color: var(--red); }
+.inq-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  align-self: flex-end;
+}
+.inq-ok { color: var(--muted); font-size: 13px; }
+.inq-date { color: var(--muted); font-size: 12px; }

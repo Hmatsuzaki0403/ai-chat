@@ -24,6 +24,11 @@ const CATEGORY_CLASS: Record<Category, string> = {
   other: "other",
 };
 
+const SUPPORT_LABEL: Record<Lang, string> = {
+  ja: "質問・クレームはこちら →", en: "Questions & complaints →", "zh-hk": "查詢・投訴 →", yue: "查詢・投訴 →",
+  es: "Preguntas y reclamaciones →", ko: "질문・클레임 접수 →", fr: "Questions et réclamations →", th: "คำถาม・ข้อร้องเรียน →",
+};
+
 export default function ChatPage() {
   const [lang, setLang] = useState<Lang>("ja");
 
@@ -268,6 +273,9 @@ export default function ChatPage() {
           </div>
           <p className="dash-note">{ui.dashNote}</p>
         </section>
+        <p className="guest-link">
+          <a href={`/support?lang=${lang}`}>{SUPPORT_LABEL[lang]}</a>
+        </p>
       </main>
     </>
   );

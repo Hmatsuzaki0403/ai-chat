@@ -29,3 +29,28 @@ export function classify(text: string): Category {
   if (INQUIRY_WORDS.some((w) => t.includes(w.toLowerCase()))) return "inquiry";
   return "other";
 }
+
+// ---- LESSON 2-5: 質問・クレーム受付の分類（コース1のAI分類を再利用・拡張） ----
+export type ContactCategory = "question" | "complaint" | "request" | "other";
+
+const COMPLAINT_WORDS = [
+  "クレーム", "苦情", "最悪", "ひどい", "酷い", "困って", "怒", "不満", "返金",
+  "届かない", "壊れ", "できない", "エラー", "騙", "詐欺", "遅い", "対応が",
+  "complaint", "terrible", "awful", "refund", "angry", "broken", "not working",
+  "worst", "disappointed", "問題", "不具合",
+];
+
+const REQUEST_WORDS = [
+  "してほしい", "して欲しい", "要望", "リクエスト", "追加して", "対応して",
+  "できるように", "希望", "お願いします", "改善",
+  "please add", "request", "feature", "would like", "wish", "hope you",
+];
+
+export function classifyContact(text: string): ContactCategory {
+  const t = text.toLowerCase();
+  // 優先度: クレーム > 要望 > 質問 > その他
+  if (COMPLAINT_WORDS.some((w) => t.includes(w.toLowerCase()))) return "complaint";
+  if (REQUEST_WORDS.some((w) => t.includes(w.toLowerCase()))) return "request";
+  if (INQUIRY_WORDS.some((w) => t.includes(w.toLowerCase()))) return "question";
+  return "other";
+}
